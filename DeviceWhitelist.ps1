@@ -176,12 +176,9 @@ function Initialize-RegistryPath {
 }
 
 function Get-AllConnectedDevices {
+    # Get basic device info quickly (without Hardware IDs to avoid slow per-device calls)
     $devices = Get-PnpDevice | Where-Object { $_.Status -eq "OK" } | Select-Object `
-    @{N = 'FriendlyName'; E = { $_.FriendlyName } },
-    @{N = 'Class'; E = { $_.Class } },
-    @{N = 'InstanceId'; E = { $_.InstanceId } },
-    @{N = 'HardwareID'; E = { (Get-PnpDeviceProperty -InstanceId $_.InstanceId -KeyName DEVPKEY_Device_HardwareIds -ErrorAction SilentlyContinue).Data | Select-Object -First 1 } },
-    @{N = 'Status'; E = { $_.Status } }
+        FriendlyName, Class, InstanceId, Status
     
     return $devices
 }
@@ -511,9 +508,11 @@ function Show-Whitelist {
 function Show-ConnectedDevices {
     Write-ColorOutput "`n[CONNECTED DEVICES]" -Color Yellow
     Write-ColorOutput "===================" -Color Yellow
-    Write-ColorOutput "  Use the Instance ID or Hardware ID to whitelist devices.`n" -Color Gray
+    Write-ColorOutput "  Loading devices..." -Color Gray
     
     $devices = Get-AllConnectedDevices | Sort-Object Class, FriendlyName
+    
+    Write-ColorOutput "  Use the Instance ID to whitelist devices.`n" -Color Gray
     
     $currentClass = ""
     foreach ($device in $devices) {
@@ -522,11 +521,8 @@ function Show-ConnectedDevices {
             Write-ColorOutput "`n  [$currentClass]" -Color Cyan
         }
         
-        Write-ColorOutput "    • $($device.FriendlyName)" -Color White
+        Write-ColorOutput "    * $($device.FriendlyName)" -Color White
         Write-ColorOutput "      Instance ID: $($device.InstanceId)" -Color Gray
-        if ($device.HardwareID) {
-            Write-ColorOutput "      Hardware ID: $($device.HardwareID)" -Color Gray
-        }
     }
     
     Write-ColorOutput "`n  Total devices: $($devices.Count)" -Color Yellow
