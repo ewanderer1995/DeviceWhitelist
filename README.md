@@ -176,7 +176,7 @@ Using the Hardware ID (all devices of this model):
 
 ## Security Considerations
 
-1. **Run only from secure location** - Protect the script from unauthorized modification
+1. **Run only from secure location** - Protect the script from unauthorized modification (Recommended to also set file permissions to Read + Execute for Admins only)
 2. **Limit access** - Only administrators should have access to the script
 3. **Audit changes** - The script creates backups before enabling restrictions
 4. **Test first** - Always test in a non-production environment
