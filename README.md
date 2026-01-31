@@ -194,4 +194,4 @@ Using the Hardware ID (all devices of this model):
 
 ## License
 
-This script is provided as-is without warranty. Use at your own risk.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
