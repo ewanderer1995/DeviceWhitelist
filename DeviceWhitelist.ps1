@@ -514,18 +514,39 @@ function Show-ConnectedDevices {
     
     Write-ColorOutput "  Use the Instance ID to whitelist devices.`n" -Color Gray
     
-    $currentClass = ""
+    # Define column widths
+    $classWidth = 20
+    $nameWidth = 40
+    
+    # Print table header
+    $header = "  {0,-$classWidth} {1,-$nameWidth} {2}" -f "CLASS", "DEVICE NAME", "INSTANCE ID"
+    $separator = "  " + ("-" * $classWidth) + " " + ("-" * $nameWidth) + " " + ("-" * 50)
+    
+    Write-ColorOutput $header -Color Cyan
+    Write-ColorOutput $separator -Color Gray
+    
+    # Print each device row
     foreach ($device in $devices) {
-        if ($device.Class -ne $currentClass) {
-            $currentClass = $device.Class
-            Write-ColorOutput "`n  [$currentClass]" -Color Cyan
+        $class = if ($device.Class.Length -gt $classWidth) { 
+            $device.Class.Substring(0, $classWidth - 3) + "..." 
+        }
+        else { 
+            $device.Class 
         }
         
-        Write-ColorOutput "    * $($device.FriendlyName)" -Color White
-        Write-ColorOutput "      Instance ID: $($device.InstanceId)" -Color Gray
+        $name = if ($device.FriendlyName.Length -gt $nameWidth) { 
+            $device.FriendlyName.Substring(0, $nameWidth - 3) + "..." 
+        }
+        else { 
+            $device.FriendlyName 
+        }
+        
+        $row = "  {0,-$classWidth} {1,-$nameWidth} {2}" -f $class, $name, $device.InstanceId
+        Write-ColorOutput $row -Color White
     }
     
-    Write-ColorOutput "`n  Total devices: $($devices.Count)" -Color Yellow
+    Write-ColorOutput $separator -Color Gray
+    Write-ColorOutput "  Total devices: $($devices.Count)" -Color Yellow
 }
 
 function Show-RestrictionStatus {
