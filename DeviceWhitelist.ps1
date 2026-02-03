@@ -175,6 +175,30 @@ function Initialize-RegistryPath {
     }
 }
 
+function Update-GroupPolicy {
+    <#
+    .SYNOPSIS
+        Refreshes Group Policy to ensure gpedit.msc reflects registry changes.
+    #>
+    Write-ColorOutput "`n  Refreshing Group Policy to apply changes..." -Color Gray
+    try {
+        # Use gpupdate to refresh computer policies (device installation policies are computer-level)
+        $gpupdateResult = Start-Process -FilePath "gpupdate.exe" -ArgumentList "/target:computer /force" -Wait -PassThru -NoNewWindow
+        
+        if ($gpupdateResult.ExitCode -eq 0) {
+            Write-ColorOutput "  Group Policy refreshed successfully." -Color Green
+            Write-ColorOutput "  Changes should now be visible in gpedit.msc" -Color Green
+        }
+        else {
+            Write-ColorOutput "  Group Policy refresh completed with warnings." -Color Yellow
+        }
+    }
+    catch {
+        Write-ColorOutput "  Could not refresh Group Policy: $($_.Exception.Message)" -Color Yellow
+        Write-ColorOutput "  You may need to run 'gpupdate /force' manually or restart." -Color Yellow
+    }
+}
+
 function Get-AllConnectedDevices {
     # Get basic device info quickly (without Hardware IDs to avoid slow per-device calls)
     $devices = Get-PnpDevice | Where-Object { $_.Status -eq "OK" } | Select-Object `
@@ -267,6 +291,9 @@ function Enable-DeviceRestrictions {
     # Apply custom whitelist
     Set-CustomWhitelist
     
+    # Refresh Group Policy so gpedit.msc shows changes
+    Update-GroupPolicy
+    
     Write-ColorOutput "`n  [SUCCESS] Device restrictions enabled!" -Color Green
     Write-ColorOutput "`n  NOTE: Some changes may require a system restart to take full effect." -Color Yellow
     Write-ColorOutput "  NOTE: Already connected devices may continue to work until unplugged." -Color Yellow
@@ -300,6 +327,9 @@ function Disable-DeviceRestrictions {
         if (Test-Path $RegAllowIds) {
             Remove-Item -Path $RegAllowIds -Recurse -Force -ErrorAction SilentlyContinue
         }
+        
+        # Refresh Group Policy so gpedit.msc shows changes
+        Update-GroupPolicy
         
         Write-ColorOutput "`n  [SUCCESS] Device restrictions disabled!" -Color Green
         Write-ColorOutput "  All devices can now be installed freely." -Color Yellow
@@ -372,6 +402,9 @@ function Add-DeviceToWhitelist {
             
             Set-ItemProperty -Path $RegAllowIds -Name "$nextAllowIndex" -Value $Identifier -Type String -Force
             Write-ColorOutput "  Added to active policy allow list" -Color Green
+            
+            # Refresh Group Policy so gpedit.msc shows changes
+            Update-GroupPolicy
         }
     }
     
@@ -426,6 +459,9 @@ function Remove-DeviceFromWhitelist {
     }
     
     if ($found) {
+        # Refresh Group Policy so gpedit.msc shows changes
+        Update-GroupPolicy
+        
         Write-ColorOutput "`n  [SUCCESS] Device removed from whitelist!" -Color Green
     }
     else {
